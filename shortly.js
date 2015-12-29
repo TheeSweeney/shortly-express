@@ -25,7 +25,9 @@ app.use(express.static(__dirname + '/public'));
 
 app.get('/', 
 function(req, res) {
+  //if user is logged in
   res.render('index');
+  //else res.redirect('/login'); 
 });
 
 app.get('/create', 
@@ -40,10 +42,8 @@ function(req, res) {
   });
 });
 
-app.get('/login',
-  function(req, res){
-    res.render('login');
-  });
+
+
 
 app.post('/links', 
 function(req, res) {
@@ -81,7 +81,50 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/login',
+  function(req, res){
+    res.render('login');
+});
 
+app.post('/login', function(req, res){
+  var password = req.body.password;
+  var username = req.body.username;
+
+  console.log("HEre");
+
+  new User({'username': username}).fetch().then(function (model) {
+    if(model === null){
+      console.log('no users')
+    }else{
+      if(model.attributes.password === password){
+      res.redirect('index');
+      }else{
+        res.redirect('login');
+      }
+    }
+  });
+  // if(username == 'demo' && password == 'demo'){    //implement logic to check if username and password exist
+  //       request.session.regenerate(function(){
+  //       request.session.user = username;
+  //       response.redirect('/index');
+  //       });
+  //   }
+  //   else {
+  //      res.redirect('/login');
+  //   }  
+});
+
+app.get('/signup',
+  function(req, res){
+    res.render('signup');
+});
+
+app.post('/signup', function (request, response) {
+  var username = request.body.username;
+  var password = request.body.password;
+
+
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
