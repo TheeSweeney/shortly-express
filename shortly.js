@@ -103,15 +103,11 @@ app.post('/login', function(req, res){
       }
     }
   });
-  // if(username == 'demo' && password == 'demo'){    //implement logic to check if username and password exist
-  //       request.session.regenerate(function(){
-  //       request.session.user = username;
-  //       response.redirect('/index');
-  //       });
-  //   }
-  //   else {
-  //      res.redirect('/login');
-  //   }  
+  
+
+  //implement logic to save "logged-in" state
+
+
 });
 
 app.get('/signup',
@@ -123,7 +119,9 @@ app.post('/signup', function (request, response) {
   var username = request.body.username;
   var password = request.body.password;
 
-
+  new User({'username': username, 'password': password}).save().then(function(){
+    console.log("new user added");
+  });
 });
 
 /************************************************************/
