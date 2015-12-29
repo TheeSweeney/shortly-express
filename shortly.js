@@ -35,9 +35,8 @@ app.use(session({ secret: 'sk8', cookie: {maxAge: 60 * 2500}, resave: true, save
 
 app.get('/', 
 function(req, res) {
-  //if user is logged in
+  checkUser(req,res);
   res.render('index');
-  //else res.redirect('/login'); 
 });
 
 app.get('/create', 
@@ -48,10 +47,17 @@ function(req, res) {
 
 app.get('/links', 
 function(req, res) {
+  checkUser(req,res);
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
+
+app.post('/',
+  function(req,res){
+    console.log("clicked");
+  }
+);
 
 
 app.post('/links', 
@@ -89,6 +95,13 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+
+app.get('/logout', function (req, res) {
+  if(req.session.user !== undefined){
+    req.session.destroy();
+  }
+    res.redirect('/login');
+});
 
 function checkUser (req, res) {
   if(req.session.user === undefined){
