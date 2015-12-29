@@ -28,10 +28,9 @@ app.use(express.static(__dirname + '/public'));
 
 
 app.use(cookieParser('sk8'));
-app.use(session({ secret: 'sk8', cookie: {maxAge: 60 * 2500}, resave: true, saveUninitialized: false}));
+app.use(session({ secret: 'sk8', cookie: {maxAge: 60 * 2500}, resave: true, saveUninitialized: true}));
  //https://github.com/expressjs/session/issues/56
  //http://expressjs.com/en/guide/migrating-4.html
-
 
 
 app.get('/', 
@@ -100,21 +99,30 @@ app.get('/login',
 app.post('/login', function(req, res){
   var password = req.body.password;
   var username = req.body.username;
-  console.log(req.session)
+  console.log(req.session);
 
 
 
   new User({'username': username}).fetch().then(function (model) {
     if(model === null){
-      console.log('no users')
+      console.log('no users');
     }else{
       if(model.attributes.password === password){
-      res.redirect('index');
+        req.session.regenerate(function(){
+          req.session.user = username;
+          res.redirect('index');
+          console.log(req.session.user); 
+          console.log(session.MemoryStore())
+        });
       }else{
         res.redirect('login');
       }
     }
   });
+
+  //
+
+
   
 
 
@@ -126,14 +134,16 @@ app.get('/signup',
     res.render('signup');
 });
 
-app.post('/signup', function (request, response) {
-  var username = request.body.username;
-  var password = request.body.password;
+app.post('/signup', function (req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+
+  console.log(req.session);
 
   new User({'username': username, 'password': password}).save().then(function(){
     console.log("new user added");
   });
-
+  //don't allow username or password to be blank
   //don't allow users to sign up for the same username
 });
 
