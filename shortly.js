@@ -2,6 +2,10 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');//npm install 
+var session = require('express-session');//npm install
+
+
 
 
 var db = require('./app/config');
@@ -21,6 +25,13 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+
+
+app.use(cookieParser('sk8'));
+app.use(session({ secret: 'sk8', cookie: {maxAge: 60 * 2500}, resave: true, saveUninitialized: false}));
+ //https://github.com/expressjs/session/issues/56
+ //http://expressjs.com/en/guide/migrating-4.html
+
 
 
 app.get('/', 
@@ -89,8 +100,9 @@ app.get('/login',
 app.post('/login', function(req, res){
   var password = req.body.password;
   var username = req.body.username;
+  console.log(req.session)
 
-  console.log("HEre");
+
 
   new User({'username': username}).fetch().then(function (model) {
     if(model === null){
@@ -105,7 +117,6 @@ app.post('/login', function(req, res){
   });
   
 
-  //implement logic to save "logged-in" state
 
 
 });
@@ -122,6 +133,8 @@ app.post('/signup', function (request, response) {
   new User({'username': username, 'password': password}).save().then(function(){
     console.log("new user added");
   });
+
+  //don't allow users to sign up for the same username
 });
 
 /************************************************************/
