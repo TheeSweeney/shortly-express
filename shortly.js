@@ -2,8 +2,8 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-var cookieParser = require('cookie-parser');//npm install 
-var session = require('express-session');//npm install
+var cookieParser = require('cookie-parser');//npm install manually
+var session = require('express-session');//npm install manually - in refactor add to package.json
 
 
 
@@ -42,6 +42,7 @@ function(req, res) {
 
 app.get('/create', 
 function(req, res) {
+  checkUser(req,res);
   res.render('index');
 });
 
@@ -51,8 +52,6 @@ function(req, res) {
     res.send(200, links.models);
   });
 });
-
-
 
 
 app.post('/links', 
@@ -91,6 +90,12 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+function checkUser (req, res) {
+  if(req.session.user === undefined){
+      res.redirect('/login');
+  }
+}
+
 app.get('/login',
   function(req, res){
     res.render('login');
@@ -99,9 +104,6 @@ app.get('/login',
 app.post('/login', function(req, res){
   var password = req.body.password;
   var username = req.body.username;
-  console.log(req.session);
-
-
 
   new User({'username': username}).fetch().then(function (model) {
     if(model === null){
@@ -142,6 +144,8 @@ app.post('/signup', function (req, res) {
 
   new User({'username': username, 'password': password}).save().then(function(){
     console.log("new user added");
+
+    //redirect to login page after signup/or login after signup
   });
   //don't allow username or password to be blank
   //don't allow users to sign up for the same username
