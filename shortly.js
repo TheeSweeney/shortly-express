@@ -4,9 +4,8 @@ var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');//npm install manually
 var session = require('express-session');//npm install manually - in refactor add to package.json
-
-
-
+var passport = require('passport');//npm install manually
+var GithubStrategy = require('passport-github2').Strategy;//npm install manually
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -32,22 +31,59 @@ app.use(session({ secret: 'sk8', cookie: {maxAge: 60 * 2500}, resave: true, save
  //https://github.com/expressjs/session/issues/56
  //http://expressjs.com/en/guide/migrating-4.html
 
+//serialize and deserialize
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+});
+
+
+
+//config passport
+passport.use(new GithubStrategy({
+    clientID: '6ccaf471f996fc0c16d9',
+    clientSecret: 'fedcb428ead337f2c7dfae702571e68a14b5aceb',
+    callbackURL: "http://127.0.0.1:4568/auth/github/callback"
+  },
+  function(accessToken, refreshToken, profile, done) {
+    findOrCreate({ githubId: profile.id }, function (err, user) {
+      console.log('authenticated', accessToken, refreshToken, profile, done);
+      return done(err, user);
+    });
+  }
+));
+
+app.get('/auth/github',
+  passport.authenticate('github', { scope: [ 'user:email' ] }));
+
+app.get('/auth/github/callback', 
+  passport.authenticate('github', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/');
+  });
+
 
 app.get('/', 
 function(req, res) {
-  checkUser(req,res);
   res.render('index');
 });
 
+app.get('/login', 
+function(req, res) {
+  res.render('login');
+});
+
+
 app.get('/create', 
 function(req, res) {
-  checkUser(req,res);
   res.render('index');
 });
 
 app.get('/links', 
 function(req, res) {
-  checkUser(req,res);
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
@@ -97,51 +133,18 @@ function(req, res) {
 /************************************************************/
 
 app.get('/logout', function (req, res) {
-  if(req.session.user !== undefined){
-    req.session.destroy();
-  }
-    res.redirect('/login');
+  req.logOut();
 });
 
-function checkUser (req, res) {
-  if(req.session.user === undefined){
-      res.redirect('/login');
-  }
-}
 
-app.get('/login',
+app.get('/auth/github',
   function(req, res){
-    res.render('login');
+    res.redirect('/index');
 });
 
 app.post('/login', function(req, res){
   var password = req.body.password;
   var username = req.body.username;
-
-  new User({'username': username}).fetch().then(function (model) {
-    if(model === null){
-      console.log('no users');
-    }else{
-      if(model.attributes.password === password){
-        req.session.regenerate(function(){
-          req.session.user = username;
-          res.redirect('index');
-          console.log(req.session.user); 
-          console.log(session.MemoryStore())
-        });
-      }else{
-        res.redirect('login');
-      }
-    }
-  });
-
-  //
-
-
-  
-
-
-
 });
 
 app.get('/signup',
@@ -169,6 +172,26 @@ app.post('/signup', function (req, res) {
 // assume the route is a short code and try and handle it here.
 // If the short-code doesn't exist, send the user to '/'
 /************************************************************/
+
+findOrCreate = function(gitObj, callback){
+  console.log("some string there as well", gitObj.githubID);
+
+
+  new User({'username': gitObj.githubID }).fetch().then(function (model) {
+    if(model === null){
+      console.log('no users');
+    }else{
+      if(model.attributes.password === password){
+        req.session.regenerate(function(){
+          req.session.user = username;
+          res.redirect('index');
+        });
+      }else{
+        res.redirect('login');
+      }
+    }
+  });
+};
 
 app.get('/*', function(req, res) {
   new Link({ code: req.params[0] }).fetch().then(function(link) {
